@@ -1,8 +1,9 @@
 import telebot
 import sqlite3
 from telebot import types
+import set
 
-bot = telebot.TeleBot('5472326831:AAGllSHgFRGcvyXj-sPsEPmZSTGDwnHFwt0')
+bot = telebot.TeleBot(set.TOKEN)
 
 
 # создание оброботчиков сообщения

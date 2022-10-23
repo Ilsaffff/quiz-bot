@@ -1,3 +1,6 @@
 # created by virtualenv automatically
 set.py
- __pycache__
+ __pycache__/
+
+
+/venv/
