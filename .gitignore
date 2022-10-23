@@ -1,7 +1,5 @@
 # created by virtualenv automatically
 set.py
  __pycache__/
-
-
 /venv/
-test.txt
+my_notes.txt
