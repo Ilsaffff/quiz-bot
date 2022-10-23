@@ -1,4 +1,5 @@
 import telebot  # Импорт библиотеки по созданию телеграмм бота
+import sqlite3
 from telebot import types
 
 bot = telebot.TeleBot('5472326831:AAGllSHgFRGcvyXj-sPsEPmZSTGDwnHFwt0')
@@ -15,9 +16,52 @@ def open_website(message):
 
 @bot.message_handler(commands=['start'])
 def start(message):
+    with sqlite3.connect('server.db') as connect:
+        cursor = connect.cursor()
+    # создание таблицы
+    with open('sqlite_create_tables.sql', 'r') as sqlite_file:
+        sql_script = sqlite_file.read()
+        sqlite_file.close()
+
+    cursor.executescript(sql_script)
+    connect.commit()
+
+    # проверка на существование данных
+    cursor.execute("SELECT * FROM users WHERE id=?", (message.from_user.id, ))
+    data = cursor.fetchone()
+    if data is None:
+        # запись данных в соотвествующие столбцы
+        users = [message.chat.id, message.from_user.username]
+        sqlite_insert = """INSERT INTO users 
+                (id, login)
+                VALUES (?,?)"""
+        cursor.execute(sqlite_insert, users)
+        connect.commit()
+    # else:
+    #     bot.send_message(message.chat.id, 'Такой пользователь уже существует')
+
     send_mess = f"<b>Привет, {message.from_user.first_name} {message.from_user.last_name}!</b> \n" \
                 f"Напиши /game чтобы начать играть"
     bot.send_message(message.chat.id, send_mess, parse_mode='html')
+
+    with open('sqlite_create_tables.sql', 'r') as sqlite_file:
+        sql_script = sqlite_file.read()
+
+    cursor.executescript(sql_script)
+    cursor.close()
+
+
+@bot.message_handler(commands=['delete'])
+def delete(message):
+    # connect DB
+    connect = sqlite3.connect('users.db')
+    cursor = connect.cursor()
+
+    # delete id from DB
+    people_id = message.from_user.id
+    cursor.execute(f"DELETE FROM users WHERE id = {people_id}")
+    connect.commit()
+    connect.close()
 
 
 @bot.message_handler(commands=['game'])
@@ -80,7 +124,7 @@ def cosmos(message):
                         'И напиши снова /game'
     if get_message_bot == '79':
         final_message = '<b>Молодец, ты ответил на все вопросы верно!🔥</b>\n' \
-                        'А теперь можешь перейти ко второй теме, если ты ещё не решал её\n' \
+                        'А теперь можешь перейти ко второй теме, если ты ещё не решал её, написав /game\n' \
                         'Написав <b>/website</b> ты можешь связаться с создателем данного бота'
 
     if get_message_bot == 'Книги':
@@ -96,10 +140,10 @@ def cosmos(message):
                         'великое произведение</a>\n' \
                         'И напиши снова /game'
     # else:
-     #   markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-      #  topic1 = types.KeyboardButton('Космос')
-       ##markup.add(topic1, topic2)
-        #final_message = 'Ой, бро, что-то не то, нажми на кнопки ниже'
+    #   markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    #  topic1 = types.KeyboardButton('Космос')
+    #  markup.add(topic1, topic2)
+    # final_message = 'Ой, бро, что-то не то, нажми на кнопки ниже'
 
     if get_message_bot == 'Шолохов М.А.':
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
