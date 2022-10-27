@@ -3,3 +3,5 @@ set.py
  __pycache__/
 /venv/
 my_notes.txt
+sqlite_create_tables.sql
+server.db
