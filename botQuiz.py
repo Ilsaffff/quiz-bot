@@ -39,8 +39,8 @@ def game(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     topic1 = types.KeyboardButton(DBHelper.selectCategory(1))
     topic2 = types.KeyboardButton(DBHelper.selectCategory(2))
+    markup.add(topic1, topic2)
     # 1 - Космос 2 - Книги
-
     #    if user_input == DBHelper.selectCategory(1):
     #        while user_input:
     #            bot.send_message(message.chat.id, DBHelper.selectQuestion(DBHelper.selectCategory(1), range(10)),
@@ -49,7 +49,6 @@ def game(message):
     # ВОПРОС: как сделать, чтобы бот отправлял вопрос ждал ответа пользователя записывал в БД, снова задавал вопрос и
     # так далее?
 
-    markup.add(topic1, topic2)
     bot.send_message(message.chat.id, DBHelper.selectQuestion(DBHelper.selectCategory(1), 5), reply_markup=markup)
 
 
