@@ -2,6 +2,9 @@
 set.py
  __pycache__/
 /venv/
-my_notes.txt
+gallery/my_notes.txt
 sqlite_create_tables.sql
 server.db
+*.db
+*.sql
+/attachments/my_notes.txt
