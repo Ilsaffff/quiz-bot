@@ -2,14 +2,14 @@ import re
 import sqlite3
 
 
-def sql_request(sql_script, db_file, sql_match):
-    if sql_match:
+def sql_request(sql_script, db_file, is_select):
+    if is_select:
         with sqlite3.connect('server.db') as connect:
             cursor = connect.cursor()
             cursor.execute(sql_script)
-            return_mess = cursor.fetchall()
+            data = cursor.fetchall()
             connect.commit()
-            return return_mess
+            return data
 
     else:
         with sqlite3.connect(db_file) as connect:
@@ -31,15 +31,8 @@ class DBHelper:
                          id INTEGER PRIMARY KEY,
                          login TEXT);"""
         sql_request(sql_script, self.db_file, False)
-
-        # проверка на уже существущий id
-        sql_script = f"SELECT * FROM users WHERE id={user_id}"
-        data = sql_request(sql_script, self.db_file, True)
-        if data is None:
-            # запись данных в соотвествующие столбцы
-            sql_script = f"""INSERT OR REPLACE INTO users VALUES ({user_id},'{username}')"""
-            sql_request(sql_script, self.db_file, False)
-        return data
+        sql_script = f"""INSERT OR IGNORE INTO users VALUES ({user_id},'{username}')"""
+        sql_request(sql_script, self.db_file, False)
 
     def select_question(self, category, id_question):
         sql_script = f"""SELECT question FROM questions WHERE id_category = {category}
