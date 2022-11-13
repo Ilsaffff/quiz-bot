@@ -4,17 +4,25 @@ import config
 from db import DBHelper
 import random
 
+
+class User:
+    category_id = 0
+    questions_id = []
+    question_id = 0
+    number_question = 1
+
+
+
 bot = telebot.TeleBot(config.TOKEN)
 db = DBHelper(config.DB_FILE)
+user = User()
 
-
-# создание оброботчиков сообщения
-@bot.message_handler(commands=['website'])
+@bot.message_handler(commands=['developer'])
 def open_website(message):
     markup = types.InlineKeyboardMarkup()  # создание кнопки внутри чата
     markup.add(types.InlineKeyboardButton('GitHub', url='https://github.com/Ilsaffff'))
     markup.add(types.InlineKeyboardButton('Telegram', url='t.me/ilsaffff'))
-    bot.send_message(message.chat.id, "Хочешь связаться со мной?", parse_mode='html', reply_markup=markup)
+    bot.send_message(message.chat.id, "Хочешь связаться со разработчиком?", parse_mode='html', reply_markup=markup)
 
 
 @bot.message_handler(commands=['delete'])
@@ -26,7 +34,7 @@ def delete(message):
 def start(message):
     db.add_user(message.from_user.id, message.from_user.username)
     send_mess = f"""
-<b>Привет, {message.from_user.first_name} {message.from_user.last_name}!</b> 
+<b>Привет, {message.from_user.first_name}!</b> 
 Напиши /game чтобы начать играть
 """
     bot.send_message(message.chat.id, send_mess, parse_mode='html')
@@ -35,51 +43,43 @@ def start(message):
 @bot.message_handler(commands=['game'])
 def game(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    topic1 = types.KeyboardButton(db.select_category(1))
-    topic2 = types.KeyboardButton(db.select_category(2))
-    markup.add(topic1, topic2)
+    markup.add(*db.get_categories())
     bot.send_message(message.chat.id, 'Выбери категорию вопросов, на которую хочешь отвечать', reply_markup=markup)
 
 
 @bot.message_handler(content_types=['text'])
 def text(message):
-    def mess_keyboards(id_category, question_id):
+    def send_question(question_id):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-        topics = [db.select_keyboards(question_id)[k] for k in range(4)]
+        topics = db.select_buttons(question_id)
         random.shuffle(topics)
         markup.add(*topics)
-        bot.send_message(message.chat.id, db.select_question(id_category, question_id), reply_markup=markup)
+        bot.send_message(message.chat.id, db.get_question(question_id), reply_markup=markup)
 
-    def mess_questions(id_category, first_question):
-        for id_question in range(first_question, first_question + 10):
-            if message.text in [db.select_keyboards(id_question)[0]]:
-                db.status_question(message.chat.id, id_category, id_question, 1)
-                if id_question == first_question + 9:
-                    bot.send_message(message.chat.id,
-                                     f'''Твой результат {db.count_result(message.chat.id, id_category)} из 10\n
-Если хочешь пройти заново или выбрать другую категорию, то напиши /game''')
-                else:
-                    mess_keyboards(id_category, id_question + 1)
-            elif message.text in [db.select_keyboards(id_question)[k] for k in range(1, 4)]:
-                db.status_question(message.chat.id, id_category, id_question, 2)
-                if id_question == first_question + 9:
-                    bot.send_message(message.chat.id,
-                                     f'''Твой результат {db.count_result(message.chat.id, id_category)} из 10\n
-Если хочешь пройти заново или выбрать другую категорию, то напиши /game''')
-                else:
-                    mess_keyboards(id_category, id_question + 1)
+    if message.text in db.get_categories():
+        user.number_question = 0
+        user.category_id = db.get_id_category(message.text)
+        user.questions_id = db.get_id_questions(user.category_id)
+        random.shuffle(user.questions_id)
+        user.question_id = user.questions_id[user.number_question]
+        send_question(user.question_id)
 
-    if message.text == db.select_category(1):
-        bot.send_message(message.chat.id, f'''Вы выбрали категорию <b>{db.select_category(1)}</b>
-Посмотрим, насколько вы Илон Маск!''', parse_mode='html')
-        mess_keyboards(1, 1)
-    mess_questions(1, 1)
-
-    if message.text == db.select_category(2):
-        bot.send_message(message.chat.id, f'''Вы выбрали категорию <b>{db.select_category(2)}</b>
-Сейчас узнаем читали ли вы Войну и Мир!''', parse_mode='html')
-        mess_keyboards(2, 11)
-    mess_questions(2, 11)
+    if message.text in db.select_buttons(user.question_id):
+        db.status_question(message.chat.id, message.text)
+        if user.number_question != len(user.questions_id) - 1:
+            user.number_question += 1
+            user.question_id = user.questions_id[user.number_question]
+            send_question(user.question_id)
+        else:
+            user.number_question = 0
+            markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+            markup.add(*db.get_categories())
+            bot.send_message(message.chat.id, f'Ты ответил верно по категории <b>{db.select_category(user.category_id)}'
+                                              f'</b> на <b>{db.count_result(message.from_user.id, user.category_id)}'
+                                              f' вопросов из {len(user.questions_id)} </b>\n'
+                                              'Далее можешь пройти ещё раз по любой другой категории! \n'
+                                              '<b>Если хочешь связаться с разработчиком бота, то напиши /developer</b>',
+                             parse_mode='html', reply_markup=markup)
 
 
 bot.polling(none_stop=True)
