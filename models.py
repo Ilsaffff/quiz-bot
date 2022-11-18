@@ -33,7 +33,7 @@ questions_category = Table(
 class Users(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    login = Column(String)
+    username = Column(String)
 
 
 class Questions(Base):
@@ -48,12 +48,8 @@ class Categories(Base):
     text = Column(String)
 
 
-class Answerss1s(Base):
-    __tablename__ = 'answers1ss'
+class Answers(Base):
+    __tablename__ = 'answers'
     id = Column(Integer, primary_key=True)
     text = Column(String)
     is_correct = Column(BLOB)
-
-
-def _init_tables(engine):
-    Base.metadata.create_all(engine)
