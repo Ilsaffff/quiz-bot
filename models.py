@@ -1,7 +1,5 @@
 # элементы для определения атрибутов
-from sqlalchemy import Table, Column, Integer, String, BLOB, ForeignKey
-# элементы для создания отношений между объектами
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Table, Column, Integer, String, BLOB, ForeignKey, create_engine
 # подклюение ядра базы данных
 from sqlalchemy.ext.declarative import declarative_base
 # подключение фичи, которая будет автомтически накладывать на таблицу repr
@@ -12,7 +10,7 @@ Base = declarative_base(cls=RepresentableBase)
 user_answer = Table(
     'user_answer',
     Base.metadata,
-    Column("user_id", Integer, ForeignKey("user.id")),
+    Column("user_id", Integer, ForeignKey("users.id")),
     Column("answer_id", Integer, ForeignKey("answers.id")),
     Column("is_correct", Integer, ForeignKey("answers.is_correct"))
 )
@@ -34,7 +32,7 @@ questions_category = Table(
 
 class Users(Base):
     __tablename__ = 'users'
-    id = Column(Integer)
+    id = Column(Integer, primary_key=True)
     login = Column(String)
 
 
@@ -42,7 +40,6 @@ class Questions(Base):
     __tablename__ = 'questions'
     id = Column(Integer, primary_key=True)
     text = Column(String)
-    answers_id = relationship("Answers", backref=backref("questions"))
 
 
 class Categories(Base):
@@ -51,9 +48,12 @@ class Categories(Base):
     text = Column(String)
 
 
-class Answers(Base):
-    __tablename__ = 'answers'
+class Answerss1s(Base):
+    __tablename__ = 'answers1ss'
     id = Column(Integer, primary_key=True)
     text = Column(String)
     is_correct = Column(BLOB)
-    question_id = Column(Integer, ForeignKey("questions.id"))
+
+
+def _init_tables(engine):
+    Base.metadata.create_all(engine)
