@@ -6,16 +6,16 @@ import random
 
 
 class User:
-    category_id = 0
-    questions_id = []
     question_id = 0
+    questions_id = []
     number_question = 1
-
+    category_id = 0
 
 
 bot = telebot.TeleBot(config.TOKEN)
 db = DBHelper(config.DB_FILE)
 user = User()
+
 
 @bot.message_handler(commands=['developer'])
 def open_website(message):

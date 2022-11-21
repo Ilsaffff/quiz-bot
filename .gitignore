@@ -8,3 +8,6 @@ server.db
 *.db
 *.sql
 /attachments/my_notes.txt
+/db_archive.py
+/example_models.py
+/parsing_questions_files/
