@@ -8,46 +8,55 @@ from sqlalchemy.orm import relationship
 
 Base = declarative_base(cls=RepresentableBase)
 
+user_answers = Table(
+    'user_answers', Base.metadata,
+    Column('user_id', ForeignKey('users.id')),
+    Column('answer_id', ForeignKey('answers.id'))
+)
 
-class Users(Base):
+
+class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     username = Column(String)
-    answers = relationship('UsersAnswers')
+
+    answers = relationship('Answer', secondary='user_answers', back_populates='users')
+
+    def __repr__(self):
+        return f'{self.username}'
 
 
-class Questions(Base):
+class Question(Base):
     __tablename__ = 'questions'
     id = Column(Integer, primary_key=True)
     text = Column(String)
     category_id = Column(Integer, ForeignKey('categories.id'))
-    answers = relationship('Answers')
+
+    answers = relationship('Answer', backref='question')
+
+    def __repr__(self):
+        return f'{self.text}'
 
 
-class Categories(Base):
+class Category(Base):
     __tablename__ = 'categories'
     id = Column(Integer, primary_key=True)
     text = Column(String)
-    questions = relationship('Questions')
+
+    questions = relationship('Question', backref='category')
+
+    def __repr__(self):
+        return f'{self.text}'
 
 
-class Answers(Base):
+class Answer(Base):
     __tablename__ = 'answers'
     id = Column(Integer, primary_key=True)
     text = Column(String)
-    question_id = Column(Integer, ForeignKey('questions.id'))
-    users = relationship('UsersAnswers')
-    # is_correct_answers = relationship('UsersAnswers')
     is_correct = Column(Boolean)
+    question_id = Column(Integer, ForeignKey('questions.id'))
 
+    users = relationship('User', secondary='user_answers', back_populates='answers')
 
-class UsersAnswers(Base):
-    __tablename__ = 'users_answers'
-    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
-    answer_id = Column(Integer, ForeignKey('answers.id'))
-    # is_correct = Column(Boolean, ForeignKey('answers.is_correct'))
-
-# class QuestionsCategory(Base):
-#     __tablename__ = 'questions_category'
-#     question_id = Column(Integer, ForeignKey('questions.id'), primary_key=True)
-#     category_id = Column(Integer, ForeignKey('categories.id'))
+    def __repr__(self):
+        return f'{self.text}'
