@@ -1,62 +1,54 @@
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from models import Users, Categories, Questions, Answers, UsersAnswers
+from sqlalchemy.orm import sessionmaker, query
+from models import User, Category, Question, Answer
 from models import Base
 import random
 
 
 class DBHelper:
+
     def __init__(self, db_file):
         self.db_file = db_file
-        self.engine = create_engine(f'sqlite:///{db_file}', echo=True)
+        self.engine = create_engine(f'sqlite:///{db_file}', echo=False, connect_args={"check_same_thread": False})
         Base.metadata.create_all(self.engine)
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
     def add_user(self, user_id, username):
-        exists = self.session.query(Users).filter_by(id=user_id, username=username).first()
-        if not exists:
-            self.session.add(Users(id=user_id, username=username))
+
+        try:
+            self.session.add(User(id=user_id, username=username))
             self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
 
     def delete_user(self, user_id):
-        self.session.query(Users).filter_by(id=user_id).delete()
+        self.session.query(User).filter_by(id=user_id).delete()
         self.session.commit()
 
     def get_categories(self):
-        categories = self.session.query(Categories.text).all()
-        categories = [element[0] for element in categories]
+        categories = self.session.query(Category).all()
         return categories
 
-    def get_category_id(self, category):
-        category_id = self.session.query(Categories.id).filter_by(text=category).first()
-        return category_id[0]
+    def get_questions(self, category_id):
+        questions = self.session.query(Question).filter_by(category_id=category_id).all()
+        return questions
 
-    def get_question_id(self, question):
-        question_id = self.session.query(Questions.id).filter_by(text=question).first()
-        return question_id[0]
+    def get_answers(self, question_id):
+        answers = self.session.query(Answer).filter_by(question_id=question_id).all()
+        return answers
 
-    def get_questions_id(self, category_id):
-        questions_id = self.session.query(Questions.id).filter_by(category_id=category_id).all()
-        questions_id = [element[0] for element in questions_id]
-        questions_id = random.choice(questions_id)
-        return questions_id
+    def get_user(self, user_id):
+        user = self.session.query(User).filter_by(user_id=user_id).first()
+        return user
 
-    def parsing(self, category, questions, answers_correct, answers1, answers2, answers3):
-        exists = self.session.query(Categories).filter_by(text=category).first()
-        if not exists:
-            self.session.add(Categories(text=category))
-        category_id = self.get_category_id(category)
-        question_number = 10
-        for i in range(question_number):
-            self.session.add(Questions(text=questions[i], category_id=category_id))
-            self.session.add(
-                Answers(text=answers_correct[i], question_id=self.get_question_id(questions[i]), is_correct=True))
-            self.session.add(
-                Answers(text=answers1[i], question_id=self.get_question_id(questions[i]), is_correct=False))
-            self.session.add(
-                Answers(text=answers2[i], question_id=self.get_question_id(questions[i]), is_correct=False))
-            self.session.add(
-                Answers(text=answers3[i], question_id=self.get_question_id(questions[i]), is_correct=False))
+    def add_user_answer(self, user_id, answer_id):
+        user = self.session.query(User).filter_by(id=user_id).first()
+        answer = self.session.query(Answer).filter_by(id=answer_id).first()
+        user.answers.append(answer)
         self.session.commit()
 
+
+if __name__ == "__main__":
+    pass
