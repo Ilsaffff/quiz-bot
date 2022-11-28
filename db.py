@@ -1,7 +1,7 @@
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker, query
-from models import User, Category, Question, Answer
+from models import User, Category, Question, Answer, user_answers
 from models import Base
 import random
 
@@ -31,23 +31,25 @@ class DBHelper:
         categories = self.session.query(Category).all()
         return categories
 
-    def get_questions(self, category_id):
-        questions = self.session.query(Question).filter_by(category_id=category_id).all()
-        return questions
-
-    def get_answers(self, question_id):
-        answers = self.session.query(Answer).filter_by(question_id=question_id).all()
-        return answers
-
-    def get_user(self, user_id):
-        user = self.session.query(User).filter_by(user_id=user_id).first()
-        return user
-
     def add_user_answer(self, user_id, answer_id):
         user = self.session.query(User).filter_by(id=user_id).first()
         answer = self.session.query(Answer).filter_by(id=answer_id).first()
         user.answers.append(answer)
         self.session.commit()
+
+    def get_result(self, user_id, questions_max_count):
+        result = 0
+        question_count = 0
+        user = self.session.query(User).filter_by(id=user_id).first()
+        answers = user.answers
+        for answer in list(reversed(answers)):
+            if question_count < questions_max_count:
+                question_count = question_count + 1
+                if answer.is_correct:
+                    result = result + 1
+            else:
+                break
+        return result
 
 
 if __name__ == "__main__":
