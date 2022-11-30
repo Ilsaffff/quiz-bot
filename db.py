@@ -51,6 +51,21 @@ class DBHelper:
                 break
         return result
 
+    def add_question(self, question_text, category_id):
+        self.session.add(Question(text=question_text, category_id=category_id))
+        self.session.commit()
 
-if __name__ == "__main__":
-    pass
+    def get_question_id(self, question_text):
+        question_id = self.session.query(Question).filter_by(text=question_text).first().id
+        return question_id
+
+    def add_answer_true(self, answer_text, question_id):
+        self.session.add(Answer(text=answer_text, is_correct=True, question_id=question_id))
+        self.session.commit()
+
+    def add_answer_false(self, answer_text, question_id):
+        self.session.add(Answer(text=answer_text, is_correct=False, question_id=question_id))
+        self.session.commit()
+
+
+db = DBHelper('testing.db')

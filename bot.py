@@ -42,7 +42,7 @@ def game(message):
 @bot.callback_query_handler(func=lambda call: True)
 def call_back_query(call):
     global questions, question_count, questions_max_count
-    if 'category' in call.data:
+    if call.data.startwith('category'):
         bot.delete_message(call.message.chat.id, call.message.message_id)
         category_id = int(''.join(filter(str.isdigit, call.data)))
         questions = db.get_categories()[category_id - 1].questions
@@ -53,7 +53,7 @@ def call_back_query(call):
         for answer in question.answers:
             markup.add(types.InlineKeyboardButton(text=str(answer), callback_data=f'answer:{answer.id}'))
         bot.send_message(call.message.chat.id, question, reply_markup=markup)
-    elif 'answer' in call.data:
+    elif call.data.startwith('answer'):
         bot.delete_message(call.message.chat.id, call.message.message_id)
         answer_id = int(''.join(filter(str.isdigit, call.data)))
         db.add_user_answer(call.message.chat.id, answer_id)
