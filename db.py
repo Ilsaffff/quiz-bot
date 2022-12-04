@@ -1,8 +1,9 @@
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import create_engine, func
-from sqlalchemy.orm import sessionmaker, query
-from models import User, Category, Question, Answer, user_answers
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from models import User, Category, Question, Answer
 from models import Base
+
 import random
 
 
@@ -37,18 +38,23 @@ class DBHelper:
         user.answers.append(answer)
         self.session.commit()
 
+    def add_user_category(self, user_id, category_id):
+        user = self.session.query(User).filter_by(id=user_id).first()
+        category = self.session.query(Category).filter_by(id=category_id).first()
+        user.category = [category]
+        self.session.commit()
+
+    def get_user(self, user_id):
+        user = self.session.query(User).filter_by(id=user_id).first()
+        return user
+
     def get_result(self, user_id, questions_max_count):
         result = 0
-        question_count = 0
-        user = self.session.query(User).filter_by(id=user_id).first()
-        answers = user.answers
-        for answer in list(reversed(answers)):
-            if question_count < questions_max_count:
-                question_count = question_count + 1
-                if answer.is_correct:
-                    result = result + 1
-            else:
-                break
+        answers = self.session.query(Answer).join(User.answers).filter(
+            User.id == user_id).all()[::-1][:questions_max_count]
+        for answer in answers:
+            if answer.is_correct:
+                result += 1
         return result
 
     def add_question(self, question_text, category_id):
@@ -67,5 +73,27 @@ class DBHelper:
         self.session.add(Answer(text=answer_text, is_correct=False, question_id=question_id))
         self.session.commit()
 
+    def get_question_by_id(self, question_id):
+        question = self.session.query(Question).filter_by(id=question_id).first()
+        return question
 
-db = DBHelper('testing.db')
+    def get_next_user_question(self, user_id, category_id):
+        questions_new = []
+        questions_user = []
+        questions_all = self.session.query(Question).filter_by(category_id=category_id).all()
+        answers_user = self.session.query(User).filter_by(id=user_id).first().answers
+        if answers_user:
+            for answer_user in answers_user:
+                questions_user.append(self.get_question_by_id(answer_user.question_id))
+            for question in questions_all:
+                if question in questions_user:
+                    continue
+                else:
+                    questions_new.append(question)
+        else:
+            questions_new = questions_all
+        question = random.choice(questions_new)
+        return question
+
+
+db = DBHelper('none.db')
