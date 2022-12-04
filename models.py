@@ -14,6 +14,12 @@ user_answers = Table(
     Column('answer_id', ForeignKey('answers.id'))
 )
 
+user_context = Table(
+    'user_context', Base.metadata,
+    Column('user_id', ForeignKey('users.id')),
+    Column('category_id', ForeignKey('categories.id'))
+)
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -21,6 +27,7 @@ class User(Base):
     username = Column(String)
 
     answers = relationship('Answer', secondary='user_answers', back_populates='users')
+    category = relationship('Category', secondary='user_context', back_populates='users')
 
     def __repr__(self):
         return f'{self.username}'
@@ -44,6 +51,7 @@ class Category(Base):
     text = Column(String)
 
     questions = relationship('Question', backref='category')
+    users = relationship('User', secondary='user_context', back_populates='category')
 
     def __repr__(self):
         return f'{self.text}'
