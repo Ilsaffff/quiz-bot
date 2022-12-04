@@ -11,3 +11,4 @@ server.db
 /db_archive.py
 /example_models.py
 /parsing_questions_files/
+/archive/
