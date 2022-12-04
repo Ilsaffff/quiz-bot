@@ -5,7 +5,7 @@ from db import DBHelper
 import random
 
 bot = telebot.TeleBot(config.TOKEN)
-db = DBHelper('test.db')
+db = DBHelper('context.db')
 
 
 @bot.message_handler(commands=['developer'])
@@ -35,38 +35,44 @@ def start(message):
 def game(message):
     markup = types.InlineKeyboardMarkup()
     for category in db.get_categories():
-        markup.add(types.InlineKeyboardButton(text=str(category), callback_data=f'category:{category.id}'))
+        markup.add(types.InlineKeyboardButton(text=category.text, callback_data=f'cat:{category.id}'))
     bot.send_message(message.chat.id, 'Выбери категорию вопросов, на которую хочешь отвечать', reply_markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def call_back_query(call):
-    global questions, question_count, questions_max_count
-    if call.data.startwith('category'):
-        bot.delete_message(call.message.chat.id, call.message.message_id)
-        category_id = int(''.join(filter(str.isdigit, call.data)))
-        questions = db.get_categories()[category_id - 1].questions
+    global question_count, questions_max_count
+    user = db.get_user(user_id=call.message.chat.id)
+    if call.data.startswith('cat'):
         question_count = 0
         questions_max_count = 10
-        markup = types.InlineKeyboardMarkup()
-        question = random.choice(questions)
-        for answer in question.answers:
-            markup.add(types.InlineKeyboardButton(text=str(answer), callback_data=f'answer:{answer.id}'))
-        bot.send_message(call.message.chat.id, question, reply_markup=markup)
-    elif call.data.startwith('answer'):
         bot.delete_message(call.message.chat.id, call.message.message_id)
-        answer_id = int(''.join(filter(str.isdigit, call.data)))
-        db.add_user_answer(call.message.chat.id, answer_id)
+        category_id = call.data.split(':')[-1]
+        db.add_user_category(user_id=call.message.chat.id, category_id=category_id)
+        markup = types.InlineKeyboardMarkup()
+        question = db.get_next_user_question(user.id, user.category[0].id)
+        for answer in question.answers:
+            markup.add(types.InlineKeyboardButton(
+                text=answer.text,
+                callback_data=f'ans:{answer.id}'))
+        bot.send_message(chat_id=call.message.chat.id, text=question.text, reply_markup=markup)
+    elif call.data.startswith('ans'):
         question_count = question_count + 1
-        question = random.choice(questions)
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        answer_id = call.data.split(':')[-1]
+        db.add_user_answer(call.message.chat.id, answer_id)
+        question = db.get_next_user_question(user.id, user.category[0].id)
         if question_count < questions_max_count:
             markup = types.InlineKeyboardMarkup()
             for answer in question.answers:
-                markup.add(types.InlineKeyboardButton(text=str(answer), callback_data=f'answer:{answer.id}'))
-            bot.send_message(call.message.chat.id, question, reply_markup=markup)
+                markup.add(types.InlineKeyboardButton(text=answer.text, callback_data=f'ans:{answer.id}'))
+            bot.send_message(chat_id=call.message.chat.id, text=question.text, reply_markup=markup)
         else:
             result = db.get_result(user_id=call.message.chat.id, questions_max_count=questions_max_count)
-            bot.send_message(call.message.chat.id, f'Твой результат: {result}', reply_markup=None)
-
-
+            markup = types.InlineKeyboardMarkup()
+            for category in db.get_categories():
+                markup.add(types.InlineKeyboardButton(text=category.text, callback_data=f'cat:{category.id}'))
+            bot.send_message(call.message.chat.id,
+                             f'Твой результат: {result}\nЕсли хочешь ещё поотвечать, то выбери категориюю вопросов',
+                             reply_markup=markup)
 bot.polling(none_stop=True)
