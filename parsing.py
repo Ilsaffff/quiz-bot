@@ -2,14 +2,13 @@ from bs4 import BeautifulSoup as bs
 import requests
 from db import DBHelper
 
-URL = 'https://dropi.ru/posts/test-na-proverku-nachitannosti-i-znaniya-mirovogo-shedevra-vojna-i-mir-proverim-kak' \
-      '-vnimatelno-vy-ego-chitali'
+URL = 'https://dropi.ru/posts/test-na-proverku-nachitannosti-vechnyj-shedevry-smozhete-skazat-kto-avtor-etix-legendarnyx-proizvedenij'
 # tests from https://dropi.ru/
-category_id = 5
+category_id = 2
 
 r = requests.get(URL)
 soup = bs(r.text, "html.parser")
-db = DBHelper('test.db')
+db = DBHelper('context.db')
 
 for parent_block in soup.find_all(class_='bTest__query__item js-test-item'):
     question = parent_block.find('h2')

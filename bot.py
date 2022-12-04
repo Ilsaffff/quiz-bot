@@ -75,4 +75,6 @@ def call_back_query(call):
             bot.send_message(call.message.chat.id,
                              f'Твой результат: {result}\nЕсли хочешь ещё поотвечать, то выбери категориюю вопросов',
                              reply_markup=markup)
+
+
 bot.polling(none_stop=True)

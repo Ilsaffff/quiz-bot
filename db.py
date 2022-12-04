@@ -94,6 +94,3 @@ class DBHelper:
             questions_new = questions_all
         question = random.choice(questions_new)
         return question
-
-
-db = DBHelper('none.db')
