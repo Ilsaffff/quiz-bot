@@ -5,7 +5,10 @@ from db import DBHelper
 import random
 
 bot = telebot.TeleBot(config.TOKEN)
-db = DBHelper('context.db')
+db = DBHelper('')
+
+
+MAX_QUESTIONS_PER_CATEGORY = 10
 
 
 @bot.message_handler(commands=['developer'])
@@ -41,16 +44,15 @@ def game(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def call_back_query(call):
-    global question_count, questions_max_count
+    global question_count
     user = db.get_user(user_id=call.message.chat.id)
     if call.data.startswith('cat'):
         question_count = 0
-        questions_max_count = 10
         bot.delete_message(call.message.chat.id, call.message.message_id)
         category_id = call.data.split(':')[-1]
         db.add_user_category(user_id=call.message.chat.id, category_id=category_id)
         markup = types.InlineKeyboardMarkup()
-        question = db.get_next_user_question(user.id, user.category[0].id)
+        question = db.get_next_user_question(user.id, user.selected_category[0].id)
         for answer in question.answers:
             markup.add(types.InlineKeyboardButton(
                 text=answer.text,
@@ -60,15 +62,17 @@ def call_back_query(call):
         question_count = question_count + 1
         bot.delete_message(call.message.chat.id, call.message.message_id)
         answer_id = call.data.split(':')[-1]
-        db.add_user_answer(call.message.chat.id, answer_id)
-        question = db.get_next_user_question(user.id, user.category[0].id)
-        if question_count < questions_max_count:
+        db.add_user_answer(user_id=call.message.chat.id, answer_id=answer_id)
+        question = db.get_next_user_question(user.id, user.selected_category[0].id)
+        if question_count < MAX_QUESTIONS_PER_CATEGORY:
             markup = types.InlineKeyboardMarkup()
             for answer in question.answers:
-                markup.add(types.InlineKeyboardButton(text=answer.text, callback_data=f'ans:{answer.id}'))
+                markup.add(types.InlineKeyboardButton(
+                    text=answer.text,
+                    callback_data=f'ans:{answer.id}'))
             bot.send_message(chat_id=call.message.chat.id, text=question.text, reply_markup=markup)
         else:
-            result = db.get_result(user_id=call.message.chat.id, questions_max_count=questions_max_count)
+            result = db.get_result(user_id=call.message.chat.id, questions_max_count=MAX_QUESTIONS_PER_CATEGORY)
             markup = types.InlineKeyboardMarkup()
             for category in db.get_categories():
                 markup.add(types.InlineKeyboardButton(text=category.text, callback_data=f'cat:{category.id}'))
