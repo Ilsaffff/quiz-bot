@@ -1,5 +1,7 @@
 # элементы для определения атрибутов
-from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey
+from datetime import datetime
+
+from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey, DateTime, func
 # подклюение ядра базы данных
 from sqlalchemy.ext.declarative import declarative_base
 # подключение фичи, которая будет автомтически накладывать на таблицу repr
@@ -8,18 +10,6 @@ from sqlalchemy.orm import relationship
 
 Base = declarative_base(cls=RepresentableBase)
 
-user_answers = Table(
-    'user_answers', Base.metadata,
-    Column('user_id', ForeignKey('users.id')),
-    Column('answer_id', ForeignKey('answers.id'))
-)
-
-user_context = Table(
-    'user_context', Base.metadata,
-    Column('user_id', ForeignKey('users.id')),
-    Column('category_id', ForeignKey('categories.id'))
-)
-
 
 class User(Base):
     __tablename__ = 'users'
@@ -27,10 +17,10 @@ class User(Base):
     username = Column(String)
 
     answers = relationship('Answer', secondary='user_answers', back_populates='users')
-    category = relationship('Category', secondary='user_context', back_populates='users')
+    selected_category = relationship('Category', secondary='user_context', back_populates='users')
 
     def __repr__(self):
-        return f'{self.username}'
+        return f'{self.id}'
 
 
 class Question(Base):
@@ -42,7 +32,7 @@ class Question(Base):
     answers = relationship('Answer', backref='question')
 
     def __repr__(self):
-        return f'{self.text}'
+        return f'{self.id}'
 
 
 class Category(Base):
@@ -50,11 +40,11 @@ class Category(Base):
     id = Column(Integer, primary_key=True)
     text = Column(String)
 
-    questions = relationship('Question', backref='category')
-    users = relationship('User', secondary='user_context', back_populates='category')
+    questions = relationship('Question', backref='selected_category')
+    users = relationship('User', secondary='user_context', back_populates='selected_category')
 
     def __repr__(self):
-        return f'{self.text}'
+        return f'{self.id}'
 
 
 class Answer(Base):
@@ -67,4 +57,17 @@ class Answer(Base):
     users = relationship('User', secondary='user_answers', back_populates='answers')
 
     def __repr__(self):
-        return f'{self.text}'
+        return f'{self.id}'
+
+
+class UserAnswer(Base):
+    __tablename__ = 'user_answers'
+    date = Column(DateTime(), default=datetime.now())
+    user_id = Column(Integer, ForeignKey('users.id'))
+    answer_id = Column(Integer, ForeignKey('answers.id'), primary_key=True)
+
+
+class UserContext(Base):
+    __tablename__ = 'user_context'
+    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    category_id = Column(Integer, ForeignKey('categories.id'))
