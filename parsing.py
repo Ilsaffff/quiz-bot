@@ -1,12 +1,12 @@
 from bs4 import BeautifulSoup as bs
 import requests
-from db import DBHelper
+from db.db import DBHelper
 
-db = DBHelper('foregun.db')
+db = DBHelper('server.db')
 MAIN_URL = 'https://dropi.ru'
 URL_TESTS = 'https://dropi.ru/c/worldhistory'
 
-category_id = 5
+category_id = 1
 
 r = requests.get(URL_TESTS)
 soup = bs(r.text, "html.parser")

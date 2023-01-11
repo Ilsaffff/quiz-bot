@@ -1,10 +1,6 @@
-# элементы для определения атрибутов
 from datetime import datetime
-
-from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey, DateTime, func
-# подклюение ядра базы данных
+from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
-# подключение фичи, которая будет автомтически накладывать на таблицу repr
 from sqlalchemy_repr import RepresentableBase
 from sqlalchemy.orm import relationship
 
@@ -62,9 +58,9 @@ class Answer(Base):
 
 class UserAnswer(Base):
     __tablename__ = 'user_answers'
-    date = Column(DateTime(), default=datetime.now())
-    user_id = Column(Integer, ForeignKey('users.id'))
     answer_id = Column(Integer, ForeignKey('answers.id'), primary_key=True)
+    date = Column(DateTime())
+    user_id = Column(Integer, ForeignKey('users.id'))
 
 
 class UserContext(Base):
